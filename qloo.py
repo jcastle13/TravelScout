@@ -1,0 +1,144 @@
+import json
+import urllib
+import math
+from urllib import parse
+from urllib import request
+
+
+# API URL
+SERVER = 'https://qsz08t9vtl.execute-api.us-east-1.amazonaws.com/production'
+def get_qloo(queries, location, radius):
+    def getSearch(query, category, location):
+        """This function searches and returns entities and their attributes.
+
+        Args:
+            query: a string containing the name/title of an entity.
+            category: a string containing the parent category and sub-category seperated by '/' of the entity being searched.
+                The following are supported parent category and sub-category pairings:
+                    - books/books
+                    - books/authors
+                    - dining/restaurants
+                    - fashion/brands
+                    - film/movies
+                    - music/artists
+                    - travel/hotels
+                    - tv/shows
+
+        Returns:
+            An array of search results with attributes ordered by relevance or an empty array if no results are found.
+        """
+
+        if query and category:
+            if location:
+                params = urllib.parse.urlencode({'category': category, 'query': query, })
+
+                url = SERVER + '/search?{}'.format(params)
+
+                with urllib.request.urlopen(url) as f:
+                    data = f.read().decode('utf-8')
+
+                data = json.loads(data)
+
+                return data['results']
+            else:
+                params = urllib.parse.urlencode({'category': category, 'query': query})
+
+                url = SERVER + '/search?{}'.format(params)
+
+                with urllib.request.urlopen(url) as f:
+                    data = f.read().decode('utf-8')
+
+                data = json.loads(data)
+
+                return data['results']
+
+
+    def getRecs(Qid, dst_category, location, radius):
+        """This function recommends entities and returns their attributes.
+
+        Args:
+            Qid: a string containing the Qloo ID for an entity.
+            dst_category: a string containing the desired parent category and sub-category seperated by '/' for recommendations.
+                The following are supported parent category and sub-category pairings:
+                    - books/books
+                    - books/authors
+                    - dining/restaurants
+                    - fashion/brands
+                    - film/movies
+                    - music/artists
+                    - travel/hotels
+                    - tv/shows
+
+        Returns:
+            An array of recommendations with their attributes ordered by affinity score.
+        """
+
+        if Qid and dst_category:
+            params = urllib.parse.urlencode({'sample': Qid, 'category': dst_category, 'location': location, 'radius': radius})
+
+            url = SERVER + '/recs?{}'.format(params)
+            # print(url)
+            with urllib.request.urlopen(url) as f:
+                data = f.read().decode('utf-8')
+
+            data = json.loads(data)
+            # print(data)
+
+            return data['results']
+
+    """
+    query, category: Entity to search for along with the category it belongs to
+    result_category: Desired category for recommendations
+    Example:
+    query = 'Stromae'
+    category = 'music/artists'
+    result_category = 'music/songs'
+    (warning, nonsense math)
+    """
+    def recommendations(queries, category, result_category, location, radius):
+        search_results = []
+        for query in queries:
+            search_results.append(getSearch(query, category, [0, 0]))
+        # print(search_results)
+        # TODO: bound this and do it for multiple artists
+        if search_results:
+            id_for_recs = ""
+            # print(id_for_recs)
+            # print(max(1, math.floor(10 - len(queries) * 3)))
+            for result in search_results:
+                # print(result)
+                try:
+                    for i in range(0, max(1, math.floor(10 - len(queries) * 3))):
+                        # print(i)
+                        id_for_recs += result[i]['id'] + ','
+                except:
+                    print("you ran into indexing errors")
+            id_for_recs = id_for_recs[:-1]
+            # print(id_for_recs)
+
+            recs_results = getRecs(id_for_recs, result_category, location, radius)
+
+            # Return top 5 recommendations
+            top_k = 20
+
+            # print('Top {} {} for {}'.format(top_k, result_category, queries))
+            reccs = []
+            for idx in range(top_k):
+                reccs.append(recs_results[idx]['name'])
+                # print('{}. {}'.format(idx+1, recs_results[idx]['name']))
+            return reccs
+        else:
+            print('No results found.')
+
+    result = {}
+    # result['hotels'] = recommendations(["John Coltrane", "Frank Sinatra"], "music/artists", "travel/hotels", "40.7128,-74.0060", 5)
+    # # result['hotels'] = recommendations(["Adele", "Sylvan Esso", "Madonna", "John Coltrane", "Frank Sinatra"], "music/artists", "travel/hotels", "40.7128,-74.0060", 5)
+    # result['restaurants'] = recommendations(["John Coltrane", "Frank Sinatra"], "music/artists", "dining/restaurants", "40.7128,-74.0060", 5)
+    # result['artists'] = recommendations(["John Coltrane", "Frank Sinatra"], "music/artists", "music/artists", "40.7128,-74.0060", 5)
+    # print(result)
+    result['hotels'] = recommendations(queries, "music/artists", "travel/hotels", location, radius)
+    # result['hotels'] = recommendations(["Adele", "Sylvan Esso", "Madonna", "John Coltrane", "Frank Sinatra"], "music/artists", "travel/hotels", "40.7128,-74.0060", 5)
+    result['restaurants'] = recommendations(queries, "music/artists", "dining/restaurants", location, radius)
+    result['artists'] = recommendations(queries, "music/artists", "music/artists", location, radius)
+    return result
+# print(get_qloo(["John Coltrane", "Frank Sinatra"], "40.7128,-74.0060", 5))
