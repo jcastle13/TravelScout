@@ -126,11 +126,14 @@ def get_qloo(queries, location, radius):
             'affinity' : 0
             }
             affinity = 0
-            # print(recs_results)
-            for idx in range(top_k):
-                reccs['reccs'].append(recs_results[idx]['name'])
-                affinity += recs_results[idx]['query']['affinity']
+            print(len(recs_results))
+            try:
+                for idx in range(top_k):
+                    reccs['reccs'].append(recs_results[idx]['name'])
+                    affinity += recs_results[idx]['query']['affinity']
                 # print('{}. {}'.format(idx+1, recs_results[idx]['name']))
+            except:
+                return "No results found in this location"
             affinity /= top_k
             # print(affinity)
             reccs['affinity'] = affinity
