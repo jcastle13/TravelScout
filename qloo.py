@@ -160,9 +160,7 @@ def get_qloo(queries, location, radius):
     hotelList = []
     restaurantList = []
     for hotel in result['hotels']['reccs']:
-        print("hotel name:", hotel);
         hotel = re.sub(u"(\u0020)", "+", hotel)
-        #hotel = hotel.replace(" ", "+")
         index = hotel.find('-')
         if index != -1:
             hotel = hotel[0:index]
@@ -176,10 +174,8 @@ def get_qloo(queries, location, radius):
         mapData = json.loads(mapData)
         hotelList.append(mapData['results'][0]['geometry']['location'])
     for restaurant in result['restaurants']['reccs']:
-        print("restaurant:", restaurant);
         restaurant = re.sub(u"(\u0020)", "+", restaurant)
         restaurant = re.sub(u"(\u00f4|\u2018|\u2019)", "'", restaurant)
-        #restaurant = restaurant.replace(" ", "+")
         index = restaurant.find('-')
         if index != -1:
             restaurant = restaurant[0:index]
@@ -192,12 +188,10 @@ def get_qloo(queries, location, radius):
         mapData = json.loads(mapData)
         restaurantList.append(mapData['results'][0]['geometry']['location'])
 
-
-    result['hotels']['reccs'].append(hotelList)
-    result['restaurants']['reccs'].append(restaurantList)
-
-    print("hotelList:", hotelList)
-    print("restaurantList:", restaurantList)
+    result['hotels']['location'] = hotelList
+    result['restaurants']['location'] = restaurantList
+    #result['hotels']['reccs'].append(hotelList)
+    #result['restaurants']['reccs'].append(restaurantList)
 
     return result
 # print(get_qloo(["John Coltrane", "Frank Sinatra"], "40.7128,-74.0060", 5))
