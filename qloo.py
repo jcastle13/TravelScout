@@ -1,11 +1,15 @@
 import json
 import urllib
 import math
+import re
 from urllib import parse
 from urllib import request
+from urllib.parse import urlencode, quote_plus
 
 # API URL
 SERVER = 'https://qsz08t9vtl.execute-api.us-east-1.amazonaws.com/production'
+GOOGLE_MAPS = 'https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key=AIzaSyAAZrBlAiCwBSoxQzU4iVL29LxmbHz7vBU'
+
 def get_qloo(queries, location, radius):
     def getSearch(query, category, location):
         """This function searches and returns entities and their attributes.
@@ -29,7 +33,7 @@ def get_qloo(queries, location, radius):
 
         if query and category:
             if location:
-                params = urllib.parse.urlencode({'category': category, 'query': query, })
+                params = urllib.parse.urlencode({'category': category, 'query': query, }, quote_via=quote_plus)   # debug
 
                 url = SERVER + '/search?{}'.format(params)
 
@@ -40,7 +44,7 @@ def get_qloo(queries, location, radius):
 
                 return data['results']
             else:
-                params = urllib.parse.urlencode({'category': category, 'query': query})
+                params = urllib.parse.urlencode({'category': category, 'query': query}, quote_via=quote_plus)    # debug
 
                 url = SERVER + '/search?{}'.format(params)
 
@@ -73,7 +77,7 @@ def get_qloo(queries, location, radius):
         """
 
         if Qid and dst_category:
-            params = urllib.parse.urlencode({'sample': Qid, 'category': dst_category, 'location': location, 'radius': radius})
+            params = urllib.parse.urlencode({'sample': Qid, 'category': dst_category, 'location': location, 'radius': radius}, quote_via=quote_plus)  # debug
 
             url = SERVER + '/recs?{}'.format(params)
             # print(url)
@@ -151,5 +155,49 @@ def get_qloo(queries, location, radius):
     # result['hotels'] = recommendations(["Adele", "Sylvan Esso", "Madonna", "John Coltrane", "Frank Sinatra"], "music/artists", "travel/hotels", "40.7128,-74.0060", 5)
     result['restaurants'] = recommendations(queries, "music/artists", "dining/restaurants", location, radius)
     result['artists'] = recommendations(queries, "music/artists", "music/artists", location, radius)
+
+    # Adding latitude/longitude lookup for each hotel & restaurant
+    hotelList = []
+    restaurantList = []
+    for hotel in result['hotels']['reccs']:
+        print("hotel name:", hotel);
+        hotel = re.sub(u"(\u0020)", "+", hotel)
+        #hotel = hotel.replace(" ", "+")
+        index = hotel.find('-')
+        if index != -1:
+            hotel = hotel[0:index]
+        index = hotel.find('W+')
+        if index != -1:
+            hotel = hotel[0]
+
+        url = 'https://maps.googleapis.com/maps/api/geocode/json?address=' + hotel + ',+CA&key=AIzaSyAAZrBlAiCwBSoxQzU4iVL29LxmbHz7vBU'
+        with urllib.request.urlopen(url) as f:
+            mapData = f.read().decode('utf-8')
+        mapData = json.loads(mapData)
+        hotelList.append(mapData['results'][0]['geometry']['location'])
+    for restaurant in result['restaurants']['reccs']:
+        print("restaurant:", restaurant);
+        restaurant = re.sub(u"(\u0020)", "+", restaurant)
+        restaurant = re.sub(u"(\u00f4|\u2018|\u2019)", "'", restaurant)
+        #restaurant = restaurant.replace(" ", "+")
+        index = restaurant.find('-')
+        if index != -1:
+            restaurant = restaurant[0:index]
+        if 'Sweet' in restaurant:
+            restaurant = '324+N+Leavitt+St'
+
+        url = 'https://maps.googleapis.com/maps/api/geocode/json?address=' + restaurant + ',+CA&key=AIzaSyAAZrBlAiCwBSoxQzU4iVL29LxmbHz7vBU'
+        with urllib.request.urlopen(url) as f:
+            mapData = f.read().decode('utf-8')
+        mapData = json.loads(mapData)
+        restaurantList.append(mapData['results'][0]['geometry']['location'])
+
+
+    result['hotels']['reccs'].append(hotelList)
+    result['restaurants']['reccs'].append(restaurantList)
+
+    print("hotelList:", hotelList)
+    print("restaurantList:", restaurantList)
+
     return result
 # print(get_qloo(["John Coltrane", "Frank Sinatra"], "40.7128,-74.0060", 5))
