@@ -122,10 +122,19 @@ def get_qloo(queries, location, radius):
             top_k = 20
 
             # print('Top {} {} for {}'.format(top_k, result_category, queries))
-            reccs = []
+            reccs = {
+            'reccs' : [],
+            'affinity' : 0
+            }
+            affinity = 0
+            # print(recs_results)
             for idx in range(top_k):
-                reccs.append(recs_results[idx]['name'])
+                reccs['reccs'].append(recs_results[idx]['name'])
+                affinity += recs_results[idx]['query']['affinity']
                 # print('{}. {}'.format(idx+1, recs_results[idx]['name']))
+            affinity /= top_k
+            # print(affinity)
+            reccs['affinity'] = affinity
             return reccs
         else:
             print('No results found.')
