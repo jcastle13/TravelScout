@@ -8,7 +8,8 @@ from urllib.parse import urlencode, quote_plus
 
 # API URL
 SERVER = 'https://qsz08t9vtl.execute-api.us-east-1.amazonaws.com/production'
-GOOGLE_MAPS = 'https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key=AIzaSyAAZrBlAiCwBSoxQzU4iVL29LxmbHz7vBU'
+
+
 
 def get_qloo(queries, location, radius):
     def getSearch(query, category, location):
@@ -168,7 +169,7 @@ def get_qloo(queries, location, radius):
         if index != -1:
             hotel = hotel[0]
 
-        url = 'https://maps.googleapis.com/maps/api/geocode/json?address=' + hotel + ',+CA&key=AIzaSyAAZrBlAiCwBSoxQzU4iVL29LxmbHz7vBU'
+        url = 'ht’
         with urllib.request.urlopen(url) as f:
             mapData = f.read().decode('utf-8')
         mapData = json.loads(mapData)
@@ -182,7 +183,7 @@ def get_qloo(queries, location, radius):
         if 'Sweet' in restaurant:
             restaurant = '324+N+Leavitt+St'
 
-        url = 'https://maps.googleapis.com/maps/api/geocode/json?address=' + restaurant + ',+CA&key=AIzaSyAAZrBlAiCwBSoxQzU4iVL29LxmbHz7vBU'
+        url = 'htt’
         with urllib.request.urlopen(url) as f:
             mapData = f.read().decode('utf-8')
         mapData = json.loads(mapData)
